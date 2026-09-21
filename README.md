@@ -1,1 +1,0 @@
-# verificador-de-webs-del-dominio
