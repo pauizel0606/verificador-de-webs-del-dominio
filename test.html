@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control | pauizel.com</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans flex flex-col justify-center items-center">
+
+    <!-- Pantalla de Login -->
+    <div id="login-screen" class="w-full max-w-md p-6">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl space-y-6 text-center">
+            <div class="w-12 h-12 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 mx-auto">
+                <i class="fa-solid fa-lock text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold text-white">pauizel.com</h1>
+                <p class="text-xs text-slate-400 mt-1">Introduce tu clave para acceder al panel privado</p>
+            </div>
+            <form onsubmit="checkPassword(event)" class="space-y-4">
+                <input type="password" id="password-input" placeholder="Contraseña de acceso" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-center focus:outline-none focus:border-indigo-500 transition-colors">
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl text-sm transition-all shadow-lg shadow-indigo-600/20">Acceder</button>
+            </form>
+            <p id="error-msg" class="text-xs text-rose-400 hidden">Contraseña incorrecta</p>
+        </div>
+    </div>
+
+    <!-- Panel de Control Interno -->
+    <div id="admin-panel" class="hidden w-full max-w-5xl p-6 my-10 space-y-8">
+        
+        <!-- Header -->
+        <header class="flex justify-between items-center border-b border-slate-800 pb-6">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center font-bold text-white">P</div>
+                <div>
+                    <h1 class="text-xl font-bold text-white">pauizel.com</h1>
+                    <p class="text-xs text-slate-400">Gestor Privado de Red & Subdominios</p>
+                </div>
+            </div>
+            <button onclick="logout()" class="px-4 py-2 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-400 text-xs font-semibold rounded-xl transition-all">
+                <i class="fa-solid fa-right-from-bracket mr-2"></i>Cerrar Sesión
+            </button>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Columna Principal: Tus Dominios Configurados -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <h2 class="font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-network-wired text-indigo-400"></i> Tus Dominios
+                        </h2>
+                        <button onclick="checkAllStatus()" class="text-xs text-indigo-400 hover:text-indigo-300 font-medium">
+                            <i class="fa-solid fa-rotate mr-1"></i> Probar Estado de Todos
+                        </button>
+                    </div>
+
+                    <ul id="subdomain-list" class="space-y-3">
+                        <!-- Creado automáticamente con JS -->
+                    </ul>
+                </div>
+
+                <!-- Block de Notas Privado -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-3">
+                    <h2 class="font-bold text-white flex items-center gap-2"><i class="fa-solid fa-note-sticky text-amber-400"></i> Notas Rápidas</h2>
+                    <textarea id="quick-notes" placeholder="Guarda aquí recordatorios, pendientes o notas privadas..." class="w-full h-32 bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm focus:outline-none focus:border-indigo-500 text-slate-300"></textarea>
+                    <div class="flex justify-end">
+                        <button onclick="saveNotes()" class="bg-slate-800 hover:bg-slate-700 text-xs font-semibold px-4 py-2 rounded-lg text-slate-200">Guardar Nota</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna Lateral: Herramientas Útiles -->
+            <div class="space-y-6">
+                <!-- Generador de Contraseñas -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                    <h2 class="font-bold text-white flex items-center gap-2"><i class="fa-solid fa-key text-emerald-400"></i> Generador de Claves</h2>
+                    <div class="flex gap-2">
+                        <input type="text" id="pass-output" readonly placeholder="Click en generar" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-mono text-emerald-400">
+                        <button onclick="generatePass()" class="bg-emerald-600 hover:bg-emerald-500 px-3 py-2 rounded-xl text-xs font-semibold">Generar</button>
+                    </div>
+                </div>
+
+                <!-- Dirección IP -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-3">
+                    <h2 class="font-bold text-white flex items-center gap-2"><i class="fa-solid fa-globe text-blue-400"></i> Tu IP Pública</h2>
+                    <p id="ip-display" class="font-mono text-sm text-slate-400">Cargando IP...</p>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        const AUTH_KEY = 'adminpau*';
+
+        // Lista de dominios asignados
+        const domains = [
+            { name: 'pauizel.com', type: 'Dominio Principal' },
+            { name: 'portafolio.pauizel.com', type: 'Subdominio' }
+        ];
+
+        // Verificación de Contraseña
+        function checkPassword(e) {
+            e.preventDefault();
+            const input = document.getElementById('password-input').value;
+            if (input === AUTH_KEY) {
+                sessionStorage.setItem('authenticated', 'true');
+                showPanel();
+            } else {
+                document.getElementById('error-msg').classList.remove('hidden');
+            }
+        }
+
+        function showPanel() {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('admin-panel').classList.remove('hidden');
+            renderDomains();
+            loadNotes();
+            fetchIP();
+        }
+
+        function logout() {
+            sessionStorage.removeItem('authenticated');
+            location.reload();
+        }
+
+        if (sessionStorage.getItem('authenticated') === 'true') {
+            showPanel();
+        }
+
+        // Mostrar lista de dominios en pantalla
+        function renderDomains() {
+            const container = document.getElementById('subdomain-list');
+            container.innerHTML = '';
+
+            domains.forEach((dom, index) => {
+                container.innerHTML += `
+                    <li class="flex items-center justify-between bg-slate-950 border border-slate-800/80 p-4 rounded-xl">
+                        <div class="flex items-center space-x-3">
+                            <span class="w-2.5 h-2.5 rounded-full bg-slate-600" id="status-${index}"></span>
+                            <div>
+                                <a href="https://${dom.name}" target="_blank" class="text-sm font-semibold text-slate-100 hover:text-indigo-400 transition-colors flex items-center gap-1.5">
+                                    ${dom.name} <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-500"></i>
+                                </a>
+                                <span class="text-[11px] text-slate-500">${dom.type}</span>
+                            </div>
+                        </div>
+                        <button onclick="pingDomain('${dom.name}', ${index})" class="text-xs px-3 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-lg text-slate-300 font-medium transition-colors">
+                            Comprobar Estado
+                        </button>
+                    </li>
+                `;
+            });
+        }
+
+        // Medidor de estado del sitio web
+        async function pingDomain(domain, index) {
+            const dot = document.getElementById(`status-${index}`);
+            dot.className = "w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping";
+            try {
+                await fetch(`https://${domain}`, { mode: 'no-cors' });
+                dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400";
+            } catch (e) {
+                dot.className = "w-2.5 h-2.5 rounded-full bg-rose-500";
+            }
+        }
+
+        function checkAllStatus() {
+            domains.forEach((dom, i) => pingDomain(dom.name, i));
+        }
+
+        // Generador de Contraseñas
+        function generatePass() {
+            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()";
+            let pass = "";
+            for (let i = 0; i < 16; i++) pass += chars.charAt(Math.floor(Math.random() * chars.length));
+            document.getElementById('pass-output').value = pass;
+        }
+
+        // Bloc de Notas
+        function saveNotes() {
+            localStorage.setItem('pau_notes', document.getElementById('quick-notes').value);
+            alert('Nota guardada correctamente');
+        }
+
+        function loadNotes() {
+            document.getElementById('quick-notes').value = localStorage.getItem('pau_notes') || '';
+        }
+
+        // IP Pública
+        async function fetchIP() {
+            try {
+                const res = await fetch('https://api.ipify.org?format=json');
+                const data = await res.json();
+                document.getElementById('ip-display').innerText = data.ip;
+            } catch {
+                document.getElementById('ip-display').innerText = 'No disponible';
+            }
+        }
+    </script>
+</body>
+</html>
